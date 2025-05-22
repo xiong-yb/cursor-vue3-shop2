@@ -1,5 +1,13 @@
 <script setup lang="ts">
-// App.vue 作为根组件，主要负责路由视图的渲染
+import { onMounted } from 'vue'
+import { useLanguageStore } from '@/stores/language'
+
+const languageStore = useLanguageStore()
+
+onMounted(() => {
+  //console.log('Initializing language...') // 添加调试日志
+  languageStore.initLanguage()
+})
 </script>
 
 <template>

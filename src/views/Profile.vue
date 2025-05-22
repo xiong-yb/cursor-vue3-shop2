@@ -6,8 +6,8 @@
           <div class="profile-sidebar">
             <div class="user-info">
               <el-avatar :size="80" :src="userInfo.avatar" />
-              <h3>{{ userInfo.username }}</h3>
-              <p class="email">{{ userInfo.email }}</p>
+              <h3>{{ userInfo.nickname }}</h3>
+              <p class="email">{{ userInfo.mobile }}</p>
             </div>
             <el-menu
               :default-active="activeMenu"
@@ -35,26 +35,38 @@
                 :model="basicForm"
                 :rules="basicRules"
                 label-width="100px"
+                class="basic-form"
               >
-                <el-form-item label="用户名" prop="username">
-                  <el-input v-model="basicForm.username" />
-                </el-form-item>
-                <el-form-item label="邮箱">
-                  <el-input v-model="userInfo.email" disabled />
-                </el-form-item>
-                <el-form-item label="头像">
+                <el-form-item label="头像" prop="avatar">
                   <el-upload
                     class="avatar-uploader"
                     action="/api/upload"
                     :show-file-list="false"
                     :on-success="handleAvatarSuccess"
                     :before-upload="beforeAvatarUpload"
+                    :headers="{
+                      'tenant-id': '1',
+                      'Authorization': userStore.accessToken
+                    }"
                   >
                     <img v-if="basicForm.avatar" :src="basicForm.avatar" class="avatar" />
                     <el-icon v-else class="avatar-uploader-icon"><plus /></el-icon>
                   </el-upload>
                 </el-form-item>
-                <el-form-item>
+                <el-form-item label="昵称" prop="nickname">
+                  <el-input v-model="basicForm.nickname" placeholder="请输入昵称" />
+                </el-form-item>
+                <el-form-item label="邮箱">
+                  <el-input v-model="userInfo.mobile" disabled />
+                </el-form-item>
+                <el-form-item label="性别" prop="sex">
+                  <el-select v-model="basicForm.sex" placeholder="请选择性别">
+                    <el-option label="未设置" :value="0" />
+                    <el-option label="男" :value="1" />
+                    <el-option label="女" :value="2" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item class="form-buttons">
                   <el-button type="primary" @click="handleBasicSubmit" :loading="basicLoading">
                     保存修改
                   </el-button>
@@ -70,6 +82,7 @@
                 :model="passwordForm"
                 :rules="passwordRules"
                 label-width="100px"
+                class="basic-form"
               >
                 <el-form-item label="当前密码" prop="currentPassword">
                   <el-input
@@ -92,7 +105,7 @@
                     show-password
                   />
                 </el-form-item>
-                <el-form-item>
+                <el-form-item class="form-buttons">
                   <el-button type="primary" @click="handlePasswordSubmit" :loading="passwordLoading">
                     修改密码
                   </el-button>
@@ -107,15 +120,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { User, Lock, Plus } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
+import { getUserInfo, updateUserInfo } from '@/api/user'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
 
 // 用户信息
 const userInfo = reactive({
-  username: '测试用户',
-  email: 'test@example.com',
+  nickname: '',
+  mobile: null as string | null,
   avatar: ''
 })
 
@@ -125,15 +142,20 @@ const activeMenu = ref('basic')
 // 基本信息表单
 const basicFormRef = ref<FormInstance>()
 const basicLoading = ref(false)
+
 const basicForm = reactive({
-  username: userInfo.username,
-  avatar: userInfo.avatar
+  nickname: '',
+  avatar: '',
+  sex: 0
 })
 
 const basicRules: FormRules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
+  nickname: [
+    { required: true, message: '请输入昵称', trigger: 'blur' },
     { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
+  ],
+  sex: [
+    { required: true, message: '请选择性别', trigger: 'change' }
   ]
 }
 
@@ -169,6 +191,26 @@ const passwordRules: FormRules = {
   ]
 }
 
+// 获取用户信息
+const fetchUserInfo = async () => {
+  try {
+    const { data } = await getUserInfo()
+    if (data.code === 0) {
+      userInfo.nickname = data.data.nickname
+      userInfo.mobile = data.data.mobile
+      userInfo.avatar = data.data.avatar || ''
+      
+      // 同时更新表单数据
+      basicForm.nickname = data.data.nickname
+      basicForm.avatar = data.data.avatar || ''
+      basicForm.sex = data.data.sex
+    }
+  } catch (error) {
+    console.error('获取用户信息失败:', error)
+    ElMessage.error('获取用户信息失败')
+  }
+}
+
 // 处理菜单选择
 const handleMenuSelect = (key: string) => {
   activeMenu.value = key
@@ -176,7 +218,12 @@ const handleMenuSelect = (key: string) => {
 
 // 处理头像上传
 const handleAvatarSuccess = (response: any) => {
-  basicForm.avatar = response.url
+  if (response.code === 0) {
+    basicForm.avatar = response.data
+    ElMessage.success('头像上传成功')
+  } else {
+    ElMessage.error(response.msg || '头像上传失败')
+  }
 }
 
 const beforeAvatarUpload = (file: File) => {
@@ -203,14 +250,21 @@ const handleBasicSubmit = async () => {
     await basicFormRef.value.validate()
     basicLoading.value = true
     
-    // TODO: 调用更新基本信息API
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    const { data } = await updateUserInfo({
+      nickname: basicForm.nickname,
+      avatar: basicForm.avatar,
+      sex: basicForm.sex
+    })
     
-    userInfo.username = basicForm.username
-    userInfo.avatar = basicForm.avatar
-    ElMessage.success('基本信息更新成功')
+    if (data.code === 0) {
+      ElMessage.success('保存成功')
+      await fetchUserInfo() // 重新获取用户信息
+    } else {
+      ElMessage.error('保存失败')
+    }
   } catch (error) {
-    console.error('更新基本信息失败:', error)
+    console.error('保存失败:', error)
+    ElMessage.error('保存失败，请稍后重试')
   } finally {
     basicLoading.value = false
   }
@@ -237,6 +291,10 @@ const handlePasswordSubmit = async () => {
     passwordLoading.value = false
   }
 }
+
+onMounted(() => {
+  fetchUserInfo()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -289,6 +347,21 @@ const handlePasswordSubmit = async () => {
   }
 }
 
+.basic-form {
+  max-width: 500px;
+  margin: 0 auto;
+
+  .form-buttons {
+    text-align: center;
+    margin-top: 30px;
+
+    :deep(.el-form-item__content) {
+      justify-content: center;
+      margin-left: 0 !important;
+    }
+  }
+}
+
 .avatar-uploader {
   :deep(.el-upload) {
     border: 1px dashed $border-color;
@@ -318,6 +391,12 @@ const handlePasswordSubmit = async () => {
     display: block;
     object-fit: cover;
   }
+}
+
+:deep(.el-input),
+:deep(.el-select) {
+  width: 100%;
+  max-width: 300px;
 }
 
 @media (max-width: 768px) {

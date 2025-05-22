@@ -36,28 +36,47 @@
             </router-link>
 
             <!-- 用户菜单：登录后显示用户头像和下拉菜单 -->
-            <template v-if="isLoggedIn">
-              <el-dropdown @command="handleUserCommand">
-                <span class="user-dropdown">
-                  <el-avatar :size="32" :src="userAvatar" />
-                  <span class="username">{{ username }}</span>
-                  <el-icon><arrow-down /></el-icon>
-                </span>
+            <div v-if="isLoggedIn" class="user-info">
+              <el-dropdown trigger="click" @command="handleUserCommand">
+                <div class="user-dropdown-link">
+                  <el-avatar :size="32" :src="userInfo.avatar" />
+                  <span class="username">{{ userInfo.nickname }}</span>
+                  <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                </div>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="profile">个人中心</el-dropdown-item>
-                    <el-dropdown-item command="orders">我的订单</el-dropdown-item>
-                    <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+                    <el-dropdown-item command="profile">
+                      <el-icon><user /></el-icon>
+                      <span>个人中心</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item command="orders">
+                      <el-icon><tickets /></el-icon>
+                      <span>我的订单</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item divided command="logout">
+                      <el-icon><switch-button /></el-icon>
+                      <span>退出登录</span>
+                    </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
-            </template>
+            </div>
             <!-- 未登录状态显示登录注册按钮 -->
             <template v-else>
               <div class="auth-buttons">
-                <el-button type="text" @click="showLoginDialog">登录</el-button>
-                <el-divider direction="vertical" />
-                <el-button type="primary" @click="showRegisterDialog">注册</el-button>
+                <el-button 
+                  class="login-btn" 
+                  @click="showLoginDialog"
+                >
+                  登录
+                </el-button>
+                <el-button 
+                  type="primary" 
+                  class="register-btn" 
+                  @click="showRegisterDialog"
+                >
+                  注册
+                </el-button>
               </div>
             </template>
 
@@ -95,7 +114,7 @@
           <!-- 公司信息：地址、联系方式等 -->
           <div class="footer-info">
             <h3>MP卡牌</h3>
-            <p>地址：中国广州市增城市新塘太平洋工业区139号511340</p>
+            <p>地址：深圳市宝安区石岩街道水田社区三民路5号</p>
             <p>电话：020-85163633 (工作时间)</p>
             <p>手机：13316084915 (工作时间)</p>
             <p>邮箱：853369272@qq.com</p>
@@ -156,9 +175,9 @@
           class="auth-form"
           @keyup.enter="handleLogin"
         >
-          <el-form-item prop="email">
+          <el-form-item prop="mail">
             <el-input
-              v-model="loginForm.email"
+              v-model="loginForm.mail"
               placeholder="请输入邮箱"
               :prefix-icon="Message"
               size="large"
@@ -176,7 +195,7 @@
           </el-form-item>
           <div class="form-actions">
             <el-checkbox v-model="loginForm.remember">记住我</el-checkbox>
-            <el-button type="text" @click="showForgotPassword" class="forgot-link">
+            <el-button link @click="showForgotPassword" class="forgot-link">
               忘记密码？
             </el-button>
           </div>
@@ -191,7 +210,7 @@
           </el-button>
           <div class="auth-footer">
             还没有账号？
-            <el-button type="text" @click="switchToRegister" class="switch-link">
+            <el-button link @click="switchToRegister" class="switch-link">
               立即注册
             </el-button>
           </div>
@@ -222,9 +241,9 @@
           class="auth-form"
           @keyup.enter="handleRegister"
         >
-          <el-form-item prop="email">
+          <el-form-item prop="mail">
             <el-input
-              v-model="registerForm.email"
+              v-model="registerForm.mail"
               placeholder="请输入邮箱"
               :prefix-icon="Message"
               size="large"
@@ -280,7 +299,7 @@
           </el-button>
           <div class="auth-footer">
             已有账号？
-            <el-button type="text" @click="switchToLogin" class="switch-link">
+            <el-button link @click="switchToLogin" class="switch-link">
               立即登录
             </el-button>
           </div>
@@ -312,9 +331,9 @@
         >
           <!-- 步骤1：邮箱验证 -->
           <template v-if="forgotPasswordStep === 1">
-            <el-form-item prop="email">
+            <el-form-item prop="mail">
               <el-input
-                v-model="forgotPasswordForm.email"
+                v-model="forgotPasswordForm.mail"
                 placeholder="请输入邮箱"
                 :prefix-icon="Message"
                 size="large"
@@ -388,7 +407,7 @@
           </template>
 
           <div class="auth-footer">
-            <el-button type="text" @click="switchToLogin" class="switch-link">
+            <el-button link @click="switchToLogin" class="switch-link">
               返回登录
             </el-button>
           </div>
@@ -400,50 +419,52 @@
 
 <script setup lang="ts">
 // 导入 Vue 核心功能
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, reactive } from 'vue'
 // 导入路由相关功能
 import { useRouter, useRoute } from 'vue-router'
 // 导入 Element Plus 组件和类型
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 // 导入 Element Plus 图标
-import { Message, Lock, Key, ShoppingCart, ArrowDown } from '@element-plus/icons-vue'
+import { Message, Lock, Key, ShoppingCart, ArrowDown, User, Tickets, SwitchButton } from '@element-plus/icons-vue'
 // 导入国际化工具
 import { t } from '@/utils/i18n'
 // 导入状态管理
 import { useUserStore } from '@/stores/user'
-import { useCartStore } from '@/stores/cart'
 import { useLanguageStore } from '@/stores/language'
 // 导入二维码图片
 import qrcodeImages from '@/assets/images/qrcodes'
+// 导入邮箱登录接口
+import { getUserInfo } from '@/api/user'
 
 // 初始化路由和状态管理实例
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const cartStore = useCartStore()
 const languageStore = useLanguageStore()
 
 // 计算属性：获取当前状态
 const currentLang = computed(() => languageStore.currentLang) // 当前语言
 const cartCount = ref(0)
-const isLoggedIn = computed(() => userStore.isLoggedIn) // 登录状态
-const username = computed(() => userStore.username) // 用户名
-const userAvatar = computed(() => userStore.userAvatar) // 用户头像
+const isLoggedIn = computed(() => userStore.checkLogin())
+const userInfo = ref({
+  nickname: '',
+  avatar: ''
+})
 
 // 登录相关状态
 const loginDialogVisible = ref(false) // 登录对话框显示状态
 const loginFormRef = ref<FormInstance>() // 登录表单引用
 const loginLoading = ref(false) // 登录加载状态
-const loginForm = ref({
-  email: '', // 邮箱
+const loginForm = reactive({
+  mail: '', // 邮箱
   password: '', // 密码
   remember: false // 记住我
 })
 
 // 登录表单验证规则
 const loginRules: FormRules = {
-  email: [
+  mail: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ],
@@ -459,7 +480,7 @@ const registerFormRef = ref<FormInstance>() // 注册表单引用
 const registerLoading = ref(false) // 注册加载状态
 const countdown = ref(0) // 验证码倒计时
 const registerForm = ref({
-  email: '', // 邮箱
+  mail: '', // 邮箱
   verifyCode: '', // 验证码
   password: '', // 密码
   confirmPassword: '' // 确认密码
@@ -467,7 +488,7 @@ const registerForm = ref({
 
 // 注册表单验证规则
 const registerRules: FormRules = {
-  email: [
+  mail: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ],
@@ -504,7 +525,7 @@ const forgotPasswordLoading = ref(false) // 忘记密码加载状态
 const forgotPasswordCountdown = ref(0) // 忘记密码验证码倒计时
 const forgotPasswordStep = ref(1) // 忘记密码步骤
 const forgotPasswordForm = ref({
-  email: '', // 邮箱
+  mail: '', // 邮箱
   verifyCode: '', // 验证码
   password: '', // 新密码
   confirmPassword: '' // 确认新密码
@@ -512,7 +533,7 @@ const forgotPasswordForm = ref({
 
 // 忘记密码表单验证规则
 const forgotPasswordRules: FormRules = {
-  email: [
+  mail: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ],
@@ -537,6 +558,62 @@ const forgotPasswordRules: FormRules = {
       trigger: 'blur'
     }
   ]
+}
+
+// 获取用户信息
+const fetchUserInfo = async () => {
+  try {  
+    if (!userStore.accessToken) {
+      console.error("未找到token，无法获取用户信息")
+      return
+    }
+
+    const response = await getUserInfo()
+    
+    if (!response) {
+      console.error("获取用户信息失败：响应为空")
+      return
+    }
+
+    const { data } = response
+    
+    if (data.code === 0 && data.data) {
+      userInfo.value = {
+        nickname: data.data.nickname || '',
+        avatar: data.data.avatar || ''
+      }
+    } else {
+      console.error("获取用户信息失败:", data)
+    }
+  } catch (error: any) {
+    console.error('获取用户信息失败:', error)
+    if (error.response) {
+      console.error('错误响应:', error.response)
+    }
+  }
+}
+
+// 监听登录状态变化
+watch(isLoggedIn, (newValue) => {
+  if (newValue) {
+    fetchUserInfo()
+  } else {
+    userInfo.value = {
+      nickname: '',
+      avatar: ''
+    }
+  }
+})
+
+// 处理退出登录
+const handleLogout = () => {
+  userStore.clearLoginState()
+  // 清除购物车数据
+  localStorage.removeItem('cart')
+  // 重置购物车数量
+  cartCount.value = 0
+  ElMessage.success('退出成功')
+  router.push('/')
 }
 
 // 处理语言切换
@@ -582,7 +659,7 @@ const showForgotPassword = () => {
 
 // 发送验证码
 const sendVerifyCode = async () => {
-  if (!registerForm.value.email) {
+  if (!registerForm.value.mail) {
     ElMessage.warning('请先输入邮箱')
     return
   }
@@ -610,26 +687,31 @@ const handleLogin = async () => {
     await loginFormRef.value.validate()
     loginLoading.value = true
     
-    // TODO: 调用登录API
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // 模拟登录成功
-    localStorage.setItem('token', 'test-token')
-    userStore.setUser({
-      username: '测试用户',
-      avatar: '',
-      token: 'test-token'
-    })
-    loginDialogVisible.value = false
+    const success = await userStore.login()
+    if (success) {
     ElMessage.success('登录成功')
+      loginDialogVisible.value = false
+      // 重置表单
+      loginForm.mail = ''
+      loginForm.password = ''
+      if (loginFormRef.value) {
+        loginFormRef.value.resetFields()
+      }
+      
+      // 登录成功后获取用户信息
+      await fetchUserInfo()
 
     // 处理登录后的重定向
     const redirect = route.query.redirect as string
     if (redirect) {
       router.push(redirect)
+      }
+    } else {
+      ElMessage.error('登录失败，请检查邮箱和密码')
     }
   } catch (error) {
     console.error('登录失败:', error)
+    ElMessage.error('登录失败，请稍后重试')
   } finally {
     loginLoading.value = false
   }
@@ -653,25 +735,6 @@ const handleRegister = async () => {
     console.error('注册失败:', error)
   } finally {
     registerLoading.value = false
-  }
-}
-
-// 处理退出登录
-const handleLogout = async () => {
-  try {
-    // TODO: 调用退出登录API
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // 清除用户信息和购物车数据
-    localStorage.removeItem('token')
-    localStorage.removeItem('cart') // 清除购物车数据
-    userStore.clearUser()
-    cartCount.value = 0 // 重置购物车数量
-    
-    ElMessage.success('已退出登录')
-    router.push('/')
-  } catch (error) {
-    console.error('退出登录失败:', error)
   }
 }
 
@@ -704,7 +767,7 @@ const handleCartClick = () => {
 
 // 发送忘记密码验证码
 const sendForgotPasswordVerifyCode = async () => {
-  if (!forgotPasswordForm.value.email) {
+  if (!forgotPasswordForm.value.mail) {
     ElMessage.warning('请先输入邮箱')
     return
   }
@@ -796,6 +859,9 @@ onMounted(() => {
   window.addEventListener('show-login-dialog', () => {
     loginDialogVisible.value = true
   })
+  if (isLoggedIn.value) {
+    fetchUserInfo()
+  }
 })
 
 onUnmounted(() => {
@@ -804,19 +870,6 @@ onUnmounted(() => {
   window.removeEventListener('show-login-dialog', () => {
     loginDialogVisible.value = true
   })
-})
-
-// 在组件挂载时初始化用户状态
-onMounted(() => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    // TODO: 调用获取用户信息API
-    userStore.setUser({
-      username: '测试用户',
-      avatar: '',
-      token
-    })
-  }
 })
 </script>
 
@@ -901,7 +954,8 @@ onMounted(() => {
         }
 
         // 用户下拉菜单样式：显示用户头像和用户名
-        .user-dropdown {
+        .user-info {
+          .user-dropdown-link {
           display: flex;
           align-items: center;
           cursor: pointer;
@@ -913,9 +967,19 @@ onMounted(() => {
             background-color: $background-color;
           }
 
+            .el-avatar {
+              margin-right: 8px;
+            }
+
           .username {
             margin: 0 8px;
             color: $text-color-primary;
+          }
+
+            .el-icon {
+              color: $text-color-secondary;
+              font-size: 12px;
+            }
           }
         }
 
@@ -923,6 +987,35 @@ onMounted(() => {
         .auth-buttons {
           display: flex;
           align-items: center;
+          gap: 12px;
+
+          .login-btn {
+            padding: 8px 20px;
+            font-size: 15px;
+            border: 1px solid $primary-color;
+            color: $primary-color;
+            background: transparent;
+            transition: all 0.3s ease;
+
+            &:hover {
+              background: rgba($primary-color, 0.1);
+              transform: translateY(-1px);
+            }
+          }
+
+          .register-btn {
+            padding: 8px 20px;
+            font-size: 15px;
+            background: $primary-color;
+            border: none;
+            transition: all 0.3s ease;
+
+            &:hover {
+              background: color.scale($primary-color, $lightness: 10%);
+              transform: translateY(-1px);
+              box-shadow: 0 4px 12px rgba($primary-color, 0.2);
+            }
+          }
         }
 
         // 语言切换样式：下拉菜单
@@ -1021,12 +1114,12 @@ onMounted(() => {
           justify-content: center;
         }
 
-        .qrcode-item {
-          text-align: center;
+          .qrcode-item {
+            text-align: center;
 
-          .el-image {
-            width: 120px;
-            height: 120px;
+            .el-image {
+              width: 120px;
+              height: 120px;
             border-radius: 8px;
             overflow: hidden;
             margin-bottom: 8px;
@@ -1040,12 +1133,12 @@ onMounted(() => {
               box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
               border-color: rgba(64, 158, 255, 0.8);
             }
-          }
+            }
 
-          p {
-            color: #ccc;
-            margin: 0;
-            font-size: 14px;
+            p {
+              color: #ccc;
+              margin: 0;
+              font-size: 14px;
           }
         }
       }
@@ -1288,6 +1381,46 @@ onMounted(() => {
 @media (max-width: 480px) {
   .auth-container {
     padding: 30px 20px;
+  }
+}
+
+.user-info {
+  .user-dropdown-link {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: $border-radius-small;
+    transition: background-color $transition-duration;
+
+    &:hover {
+      background-color: $background-color;
+    }
+
+    .el-avatar {
+      margin-right: 8px;
+    }
+
+    .username {
+      margin: 0 8px;
+      color: $text-color-primary;
+    }
+
+    .el-icon {
+      color: $text-color-secondary;
+      font-size: 12px;
+    }
+  }
+}
+
+:deep(.el-dropdown-menu__item) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+
+  .el-icon {
+    font-size: 16px;
   }
 }
 </style> 

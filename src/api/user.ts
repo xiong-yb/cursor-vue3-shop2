@@ -1,12 +1,58 @@
 import request from '@/utils/request'
-import type { LoginParams, RegisterParams, ResetPasswordParams, UserInfo, ApiResponse } from './types'
+import type { RegisterParams, ResetPasswordParams, ApiResponse } from './types'
 
-// 用户登录
-export function login(data: LoginParams) {
-  return request<ApiResponse<{ token: string }>>({
-    url: '/user/login',
-    method: 'post',
-    data
+// 邮箱登录 - 使用测试数据
+export function mailLogin() {
+  // 模拟登录成功
+  return Promise.resolve({
+    data: {
+      code: 0,
+      data: {
+        userId: 288,
+        accessToken: 'test_access_token',
+        refreshToken: 'test_refresh_token',
+        expiresTime: Date.now() + 24 * 60 * 60 * 1000 // 24小时后过期
+      },
+      msg: ''
+    }
+  })
+}
+
+// 获取用户信息 - 使用测试数据
+export function getUserInfo() {
+  return Promise.resolve({
+    data: {
+      code: 0,
+      data: {
+        id: 288,
+        nickname: '测试用户',
+        avatar: 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png',
+        mobile: '13800138000',
+        mail: 'test@example.com',
+        sex: 1,
+        point: 100,
+        experience: 500,
+        level: 'VIP1',
+        brokerageEnabled: true
+      },
+      msg: ''
+    }
+  })
+}
+
+// 刷新token - 使用测试数据
+export function refreshToken() {
+  return Promise.resolve({
+    data: {
+      code: 0,
+      data: {
+        userId: 288,
+        accessToken: 'new_test_access_token',
+        refreshToken: 'new_test_refresh_token',
+        expiresTime: Date.now() + 24 * 60 * 60 * 1000
+      },
+      msg: ''
+    }
   })
 }
 
@@ -37,18 +83,14 @@ export function resetPassword(data: ResetPasswordParams) {
   })
 }
 
-// 获取用户信息
-export function getUserInfo() {
-  return request<ApiResponse<UserInfo>>({
-    url: '/user/info',
-    method: 'get'
-  })
-}
-
 // 更新用户信息
-export function updateUserInfo(data: Partial<UserInfo>) {
-  return request<ApiResponse>({
-    url: '/user/update',
+export function updateUserInfo(data: {
+  nickname?: string
+  avatar?: string
+  sex?: number
+}) {
+  return request<ApiResponse<boolean>>({
+    url: '/member/user/update',
     method: 'put',
     data
   })

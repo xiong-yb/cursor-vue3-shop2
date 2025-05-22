@@ -116,12 +116,12 @@
             <!-- 数量选择 -->
             <el-form-item label="数量" required>
               <el-radio-group v-model="selectedSpecs.quantity" class="quantity-group">
-                <el-radio-button label="100">100副</el-radio-button>
-                <el-radio-button label="200">200副</el-radio-button>
-                <el-radio-button label="500">500副</el-radio-button>
-                <el-radio-button label="1000">1000副</el-radio-button>
-                <el-radio-button label="2000">2000副</el-radio-button>
-                <el-radio-button label="5000">5000副</el-radio-button>
+                <el-radio-button value="100">100副</el-radio-button>
+                <el-radio-button value="200">200副</el-radio-button>
+                <el-radio-button value="500">500副</el-radio-button>
+                <el-radio-button value="1000">1000副</el-radio-button>
+                <el-radio-button value="2000">2000副</el-radio-button>
+                <el-radio-button value="5000">5000副</el-radio-button>
               </el-radio-group>
             </el-form-item>
           </div>

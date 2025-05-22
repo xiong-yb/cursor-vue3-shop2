@@ -15,7 +15,7 @@
                 <el-icon><location /></el-icon>
                 <div class="info-content">
                   <h3>公司地址</h3>
-                  <p>中国广州市增城市新塘太平洋工业区139号511340</p>
+                  <p>深圳市宝安区石岩街道水田社区三民路5号</p>
                 </div>
               </div>
               <div class="info-item">
@@ -98,12 +98,7 @@
         <!-- 地图 -->
         <div class="map-section">
           <h2>公司位置</h2>
-          <div class="map-container">
-            <!-- 这里可以嵌入地图，例如百度地图或高德地图 -->
-            <div class="map-placeholder">
-              地图加载中...
-            </div>
-          </div>
+          <div class="map-container" ref="mapContainer"></div>
         </div>
       </div>
     </div>
@@ -111,15 +106,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { t } from '@/utils/i18n'
 import { Location, Phone, Message, Clock } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import qrcodeImages from '@/assets/images/qrcodes'
 
+// 声明全局回调函数类型
+declare global {
+  interface Window {
+    initAMap: () => void
+  }
+}
+
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
+const mapContainer = ref<HTMLElement | null>(null)
 
 const form = ref({
   name: '',
@@ -165,6 +168,53 @@ const handleSubmit = async () => {
     submitting.value = false
   }
 }
+
+// 初始化地图
+onMounted(() => {
+  // 动态加载高德地图脚本
+  const script = document.createElement('script')
+  script.src = `https://webapi.amap.com/maps?v=2.0&key=e486ae1c8ef28cf83904b8b7c3fd9c1e&plugin=AMap.Geocoder&callback=initAMap`
+  script.async = true
+  script.crossOrigin = 'anonymous'
+  
+  // 定义全局回调函数
+  window.initAMap = () => {
+    if (!mapContainer.value) return
+
+    // 创建地图实例
+    const map = new AMap.Map(mapContainer.value, {
+      zoom: 15,
+      center: [113.9626, 22.695792] // 深圳市宝安区石岩街道水田社区三民路5号
+    })
+
+    // 创建标记
+    const marker = new AMap.Marker({
+      position: [113.9626, 22.695792],
+      title: '深圳禧图纸品印刷有限公司'
+    })
+
+    // 将标记添加到地图
+    map.add(marker)
+
+    // 添加信息窗体
+    const infoWindow = new AMap.InfoWindow({
+      content: `
+        <div style="padding: 10px;">
+          <h3 style="margin: 0 0 10px;">深圳禧图纸品印刷有限公司</h3>
+          <p style="margin: 0;">地址：深圳市宝安区石岩街道水田社区三民路5号</p>
+        </div>
+      `,
+      offset: new AMap.Pixel(0, -30)
+    })
+
+    // 点击标记时打开信息窗体
+    marker.on('click', () => {
+      infoWindow.open(map, marker.getPosition())
+    })
+  }
+
+  document.head.appendChild(script)
+})
 </script>
 
 <style lang="scss" scoped>
@@ -293,18 +343,8 @@ const handleSubmit = async () => {
 
       .map-container {
         height: 400px;
-        background: #f5f5f5;
         border-radius: 8px;
         overflow: hidden;
-
-        .map-placeholder {
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #999;
-          font-size: 1.2rem;
-        }
       }
     }
   }

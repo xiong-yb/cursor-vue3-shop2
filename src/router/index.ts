@@ -87,14 +87,16 @@ router.beforeEach((
   _from: RouteLocationNormalized,
   next: NavigationGuardNext
 ) => {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('accessToken')
   
   if (to.meta.requiresAuth && !token) {
-    // 如果需要登录但未登录，保存目标路由并重定向到首页
+    // 如果需要登录但未登录，重定向到首页并显示登录弹窗
     next({ 
-      name: 'home',
+      path: '/', 
       query: { redirect: to.fullPath }
     })
+    // 触发登录弹窗
+    window.dispatchEvent(new CustomEvent('show-login-dialog'))
   } else {
     next()
   }

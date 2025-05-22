@@ -1,15 +1,12 @@
 {
-  "name": "yuhuapuke-website",
+  "name": "mppuke-website",
   "private": true,
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite --mode env.local",
-    "build": "vue-tsc && vite build --mode local",
-    "preview": "vite preview --mode local",
-    "dev:dev": "vite --mode dev",
-    "build:dev": "vue-tsc && vite build --mode dev",
-    "preview:dev": "vite preview --mode dev",
+    "dev": "vite --mode env",
+    "build": "vue-tsc && vite build --mode env",
+    "preview": "vite preview --mode env",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
     "format": "prettier --write src/"
   },
